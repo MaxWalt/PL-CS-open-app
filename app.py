@@ -456,8 +456,10 @@ with tab4:
 with tab5:
     st.header("Want a Deeper Dive?")
     st.markdown(
-        "Interested in a personalised analysis, coaching consultation, or research collaboration? "
-        "Book a meeting directly below."
+        "Book an introductory one-on-one session to explore how performance modelling can "
+        "inform your training and competition approach.\n\n"
+        "This session focuses on understanding your context and determining whether a deeper "
+        "performance analysis would be beneficial."
     )
     calendly_html = """
     <div class="calendly-inline-widget"
