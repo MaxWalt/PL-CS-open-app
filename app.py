@@ -109,17 +109,6 @@ def zone_boundaries(CS_ms):
     }
 
 
-def classify_pace(speed_ms, CS_ms):
-    bounds = zone_boundaries(CS_ms)
-    frac = speed_ms / CS_ms
-    for zone, (lo, hi) in bounds.items():
-        if lo <= frac < hi:
-            return zone
-    if frac >= 1.40:
-        return "Z5"
-    return "Z1"
-
-
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
@@ -458,49 +447,6 @@ with tab4:
         st.markdown(
             f"\n**CS = {CS:.3f} m/s ({CS*3.6:.2f} km/h · {fmt_pace(1/CS)})**  |  "
             f"D′ = {D_prime:.0f} m"
-        )
-
-        st.divider()
-        st.subheader("Zone Bar")
-
-        fig_z = go.Figure()
-        for zone, (lo, hi) in bounds.items():
-            fig_z.add_trace(go.Bar(
-                x=[hi * CS * 3.6 - lo * CS * 3.6],
-                y=["Zones"],
-                base=[lo * CS * 3.6],
-                orientation="h",
-                name=zone,
-                marker_color=ZONE_COLORS[zone],
-                text=zone,
-                textposition="inside",
-                insidetextanchor="middle",
-            ))
-        fig_z.update_layout(
-            barmode="stack",
-            xaxis_title="Speed (km/h)",
-            showlegend=False,
-            height=140,
-            margin=dict(t=10, b=40),
-            template="plotly_white",
-        )
-        st.plotly_chart(fig_z, use_container_width=True)
-
-        st.divider()
-        st.subheader("Classify a pace")
-        col_x, col_y = st.columns(2)
-        with col_x:
-            input_speed_kmh = st.number_input("Speed (km/h) to classify", min_value=0.1,
-                                               max_value=40.0, value=round(CS * 3.6, 1), step=0.1)
-        speed_ms = input_speed_kmh / 3.6
-        zone_result = classify_pace(speed_ms, CS)
-        color_result = ZONE_COLORS[zone_result]
-        st.markdown(
-            f"<div style='background:{color_result};color:white;padding:12px 18px;"
-            f"border-radius:8px;font-size:1.1rem;display:inline-block'>"
-            f"<b>{input_speed_kmh:.1f} km/h → {zone_result}</b> "
-            f"({speed_ms / CS * 100:.1f}% of CS)</div>",
-            unsafe_allow_html=True,
         )
 
         st.caption("Zone thresholds: Hunter et al. (2024). Z2 upper boundary depends on CS level.")
