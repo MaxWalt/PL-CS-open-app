@@ -31,14 +31,17 @@ def parse_time(t):
 
 
 def fmt_time(seconds):
-    """Format seconds as h:mm:ss or m:ss."""
-    seconds = int(round(seconds))
-    h = seconds // 3600
-    m = (seconds % 3600) // 60
-    s = seconds % 60
+    """Format seconds as h:mm:ss.xx, m:ss.xx, or ss.xx (for sub-minute times)."""
+    total = round(seconds, 2)
+    h = int(total // 3600)
+    rem = total - h * 3600
+    m = int(rem // 60)
+    s = rem - m * 60
     if h > 0:
-        return f"{h}:{m:02d}:{s:02d}"
-    return f"{m}:{s:02d}"
+        return f"{h}:{m:02d}:{s:05.2f}"
+    elif m > 0:
+        return f"{m}:{s:05.2f}"
+    return f"{s:.2f}"
 
 
 def fmt_pace(seconds_per_meter):
@@ -121,10 +124,15 @@ def classify_pace(speed_ms, CS_ms):
 # UI
 # ---------------------------------------------------------------------------
 
-st.title("Power Law & Critical Speed Model — Open Distance")
+st.title("🏃 Power Law & Critical Speed Model — Open Distance")
 st.markdown(
     "Enter any distance–time pairs to fit the PL and CS models. "
     "No restrictions on which events you use."
+)
+st.caption(
+    "Walt et al. (2025). Using Multilevel Models to Compare Performance Prediction and "
+    "Characterization Abilities Between Power-Law and Critical-Speed Models in Middle- and "
+    "Long-Distance Running. *International Journal of Sports Physiology and Performance.*"
 )
 
 # ---------------------------------------------------------------------------
@@ -236,11 +244,8 @@ with tab1:
         st.dataframe(pl_df, hide_index=True, use_container_width=True)
 
         st.markdown(
-            f"**Interpretation:** A higher **b** (closer to 0.35) indicates greater speed "
-            f"loss over longer durations. Your E = **{E:.3f}** "
-            + ("suggests a strong endurance profile." if E > 0.85 else
-               "suggests a mixed endurance–speed profile." if E > 0.75 else
-               "suggests a speed-dominant profile.")
+            "**Interpretation:** Higher S indicates greater speed abilities, while "
+            "greater E underscores a lower speed loss over longer events."
         )
 
     with col2:
@@ -268,37 +273,6 @@ with tab1:
             "finite anaerobic work capacity above CS."
         )
 
-    st.divider()
-    st.subheader("Input Data Summary")
-    summary_rows = []
-    for d, t in zip(distances, times):
-        spd = d / t
-        summary_rows.append({
-            "Distance (m)": int(d),
-            "Time": fmt_time(t),
-            "Speed (m/s)": f"{spd:.3f}",
-            "Pace (min/km)": fmt_pace(1 / spd),
-            "PL predicted time": fmt_time(d / (S * (d / spd / 1) ** (-b))) if False else fmt_time((d / S) ** (1 / (1 - b))),
-            "CS predicted time": fmt_time((d - D_prime) / CS) if CS > 0 and (d - D_prime) > 0 else "—",
-        })
-
-    # Recompute PL predicted time correctly: speed = S*t^(-b), distance = speed*t = S*t^(1-b)
-    # => t = (d/S)^(1/E)
-    for i, row in enumerate(summary_rows):
-        d = distances[i]
-        try:
-            t_pl = (d / S) ** (1 / E)
-            row["PL predicted time"] = fmt_time(t_pl)
-        except Exception:
-            row["PL predicted time"] = "—"
-
-    st.dataframe(pd.DataFrame(summary_rows), hide_index=True, use_container_width=True)
-
-    st.caption(
-        "Walt et al. (2025). Using Multilevel Models to Compare Performance Prediction and "
-        "Characterization Abilities Between Power-Law and Critical-Speed Models in Middle- and "
-        "Long-Distance Running. *International Journal of Sports Physiology and Performance.*"
-    )
 
 # ── Tab 2: Predictions ───────────────────────────────────────────────────────
 
